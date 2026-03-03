@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Fraud Detection</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .fraud {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2>Fraud Detection</h2>
+
+        <form id="form">
+            <input type="number" id="step" placeholder="Step" value="10" required>
+            <input type="number" id="amount" placeholder="Amount" value="200" required>
+
+            <select id="age">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="U">Unknown</option>
+            </select>
+
+            <select id="gender">
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+                <option value="E">Enterprise</option>
+                <option value="U">Unknown</option>
+            </select>
+
+            <input type="text" id="merchant" placeholder="Merchant e.g. M480139044" required>
+
+            <select id="category">
+                <option value="es_transportation">Transportation</option>
+                <option value="es_health">Health</option>
+                <option value="es_otherservices">Other Services</option>
+                <option value="es_food">Food</option>
+                <option value="es_travel">Travel</option>
+                <option value="es_leisure">Leisure</option>
+                <option value="es_sportsandtoys">Sports & Toys</option>
+                <option value="es_home">Home</option>
+                <option value="es_fashion">Fashion</option>
+                <option value="es_wellnessandbeauty">Wellness & Beauty</option>
+                <option value="es_tech">Tech</option>
+            </select>
+
+            <button type="submit">Analyze</button>
+        </form>
+
+        <div id="result" class="result"></div>
+
+    </div>
+
+    <script>
+        document.getElementById("form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const resultBox = document.getElementById("result");
+
+            const data = {
+                step: document.getElementById("step").value,
+                amount: document.getElementById("amount").value,
+                age: document.getElementById("age").value,
+                gender: document.getElementById("gender").value,
+                merchant: document.getElementById("merchant").value,
+                category: document.getElementById("category").value
+            };
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                resultBox.style.display = "block";
+
+                if (result.success) {
+                    if (result.is_fraud) {
+                        resultBox.className = "result fraud";
+                        resultBox.innerHTML =
+                            "⚠ FRAUD DETECTED<br>Probability: " +
+                            (result.fraud_probability * 100).toFixed(2) +
+                            "%<br>Threshold Used: " + result.threshold_used;
+                    } else {
+                        resultBox.className = "result success";
+                        resultBox.innerHTML =
+                            "✓ Transaction Legitimate<br>Probability: " +
+                            (result.fraud_probability * 100).toFixed(2) +
+                            "%<br>Threshold Used: " + result.threshold_used;
+                    }
+                } else {
+                    resultBox.className = "result fraud";
+                    resultBox.innerHTML = "Error: " + result.error;
+                }
+
+            } catch (error) {
+                resultBox.style.display = "block";
+                resultBox.className = "result fraud";
+                resultBox.innerHTML = "Server Error!";
+            }
+        });
+    </script>
+
+</body>
+
+</html>
